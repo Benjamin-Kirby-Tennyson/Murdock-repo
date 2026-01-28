@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MURDOCK – Daredevil View</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    #grid { display: grid; grid-template-columns: repeat(8, 32px); gap: 4px; }
+    .cell { width: 32px; height: 32px; background: #ddd; border-radius: 6px;
+            display:flex; align-items:center; justify-content:center; font-size:10px; }
+    .safe { background:#9ae6b4; }
+    .warn { background:#ffd93d; }
+    .danger { background:#ff6b6b; }
+  </style>
+</head>
+<body>
+
+<h2>MURDOCK – Live Sensor Dashboard</h2>
+<h3 id="state">STATE</h3>
+<p>Min distance: <span id="dist">0</span> mm</p>
+<p id="msg"></p>
+
+<div id="grid"></div>
+
+<script>
+  const ws = new WebSocket("wss://ws.ifelse.io");
+
+  const grid = document.getElementById("grid");
+  const cells = [];
+  for (let i=0;i<64;i++){
+    const d=document.createElement("div");
+    d.className="cell";
+    grid.appendChild(d);
+    cells.push(d);
+  }
+
+  ws.onmessage = (e)=>{
+    const d = JSON.parse(e.data);
+    document.getElementById("state").textContent =
+      ["SAFE","WARNING","DANGER"][d.state] || "UNKNOWN";
+    document.getElementById("dist").textContent = d.min_mm;
+    document.getElementById("msg").textContent = d.msg || "";
+
+    d.grid.forEach((mm,i)=>{
+      cells[i].className="cell " +
+        (mm<600?"danger":mm<1200?"warn":"safe");
+      cells[i].textContent = mm?Math.round(mm/100)*100:"";
+    });
+  };
+</script>
+
+</body>
+</html>
